@@ -1,11 +1,9 @@
-from load import load_composition, load_memory, load_space, load_robot
-
 import json
 
 import numpy as np
 import torch
 
-with open("task_sols.json") as f:
+with open("single_task_sols_0.5777829296876128.json") as f:
     task_sols = json.load(f)
     
 
@@ -13,14 +11,8 @@ X = []
 Y = []
 
 for task_sol in task_sols["task_sols"]:
-    task_sol["composition"]
-    init_box_pos = load_space(task_sol["space"])
-    robot_state = load_robot(task_sol["robot"])
-    end_box_pos = load_composition(task_sol["composition"])
-    action = load_memory(task_sol["memories"]["memories"][0])
-    
-    X.append([*init_box_pos, *robot_state, *end_box_pos])
-    Y.append(action)
+    X.append(task_sol["condensed_task"])
+    Y.append(task_sol["solution"])
 
 X = torch.tensor(X)
 Y = torch.tensor(Y)

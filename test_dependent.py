@@ -6,12 +6,10 @@ import json
 import copy
 import time
 
-filename = "logs/2024_06_21_17_30_13/res.onnx"
+filename = "logs/2024_06_24_17_18_37/res.onnx"
 
 sess = InferenceSession(filename)
-dataset = JointDataset("X.trc", "Y.trc", "cpu")
-
-
+dataset = LSTMJointDataset("X.trc", "Y.trc", "cpu")
 
 with open("task_sols.json") as f:
     task_sols = json.load(f)
@@ -21,13 +19,25 @@ write_task_sols = {"task_sols": []}
 inds = []
 
 for i in range(len(task_sols["task_sols"])):
-    res = torch.tensor(sess.run(None, {sess.get_inputs()[0].name: dataset[i][0].unsqueeze(0).numpy()})[0][0])
+    input_data = dataset[i][0].unsqueeze(0).numpy()
+    h0 = torch.zeros(*sess.get_inputs()[1].shape).numpy()
+    c0 = torch.zeros(*sess.get_inputs()[2].shape).numpy()
+
+    inputs = {
+        sess.get_inputs()[0].name: input_data,
+        sess.get_inputs()[1].name: h0,
+        sess.get_inputs()[2].name: c0,
+    }
+    
+    res = sess.run(None, inputs)
+    joint_angles = torch.tensor(res[0][0]).view(-1)
+
     cur_task_sol = task_sols["task_sols"][i]
 
     write_task_sols["task_sols"].append(cur_task_sol)
     write_task_sols["task_sols"][-1]["memories"]["memories"].append(copy.deepcopy(cur_task_sol["memories"]["memories"][0]))
     write_task_sols["task_sols"][-1]["memories"]["memories"][1][0] = 1
-    write_task_sols["task_sols"][-1]["memories"]["memories"][1][1]["pn"] = res.numpy().tolist()
+    write_task_sols["task_sols"][-1]["memories"]["memories"][1][1]["pn"] = joint_angles.numpy().tolist()
     
     write_task_sols["task_sols"][-1]["memories"]["labels"].append(copy.deepcopy(cur_task_sol["memories"]["labels"][0]))
     write_task_sols["task_sols"][-1]["memories"]["labels"][1][0] = 1
@@ -36,7 +46,7 @@ for i in range(len(task_sols["task_sols"])):
     write_task_sols["task_sols"][-1]["memories"]["props"][1][0] = 1
     write_task_sols["task_sols"][-1]["memories"]["props"][1][1]["created"] = int(time.time())
 
-    inds.append((np.linalg.norm((res - dataset[i][1])).item(), i))
+    inds.append((np.linalg.norm((joint_angles - dataset[i][1].view(-1))).item(), i))
 
 inds.sort(reverse=True)
 

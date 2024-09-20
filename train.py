@@ -14,14 +14,14 @@ folder = os.path.join("logs", datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%
 
 device = "cuda"
 
-dataset = JointDataset("X.trc", "Y.trc", device)
+dataset = JointDataset("X_filtered.trc", "Y_filtered.trc", device)
 mlp = MLP(dataset.input_size, dataset.output_size, dataset.X_normalise_params, dataset.Y_normalise_params).to(device)
-
-n_epochs = 250
+print(len(dataset))
+n_epochs = 100
 
 loss_function = nn.MSELoss()
-optimizer = torch.optim.Adam(mlp.parameters(), lr=5e-4)
-scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.86)
+optimizer = torch.optim.Adam(mlp.parameters(), lr=1e-3)
+scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.85)
 # scheduler = lr_scheduler.ConstantLR(optimizer, 1)
 
 train_set, val_set = torch.utils.data.random_split(dataset, [0.8, 0.2])
@@ -60,4 +60,4 @@ for epoch in range(0, n_epochs):
     print("valid", epoch, valid_loss / len(valid_loader))
     writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
 
-onnx_save.export(mlp, os.path.join(folder, "res.onnx"), dataset.input_size, -1)
+onnx_save.export(mlp, os.path.join(folder, "res.onnx"), dataset.input_size)
