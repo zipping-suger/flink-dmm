@@ -18,8 +18,8 @@ dataset = JointDataset("X_filtered.trc", "Y_filtered.trc", device)
 mlp = MLP(dataset.input_size, dataset.output_size, dataset.X_normalise_params, dataset.Y_normalise_params).to(device)
 print(len(dataset))
 n_epochs = 100
+    
 
-loss_function = nn.MSELoss()
 optimizer = torch.optim.Adam(mlp.parameters(), lr=1e-3)
 scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.85)
 # scheduler = lr_scheduler.ConstantLR(optimizer, 1)

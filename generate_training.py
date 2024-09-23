@@ -3,7 +3,7 @@ import json
 import numpy as np
 import torch
 
-with open("single_task_sols_0.5777829296876128.json") as f:
+with open("single_task_sols_0.9.json") as f:
     task_sols = json.load(f)
     
 

@@ -4,3 +4,4 @@ logs
 __pycache__
 *.trc
 *.pkl
+single_task_sols_*.json
