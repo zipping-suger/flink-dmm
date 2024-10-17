@@ -39,6 +39,11 @@ for epoch in range(0, n_epochs):
         optimizer.zero_grad()
         outputs = mlp(inputs)
         loss = loss_function(outputs, targets)
+        
+        # check for NaNs
+        if torch.isnan(loss):
+            print(f"NaN detected in training loss at epoch {epoch}, batch {i}")
+        
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
@@ -56,6 +61,12 @@ for epoch in range(0, n_epochs):
 
             outputs = mlp(inputs)
             loss = loss_function(outputs, targets)
+            
+            if torch.isnan(loss):
+                print(f"NaN detected in validation loss at epoch {epoch}, batch {i}")
+                
+                loss = loss_function(outputs, targets)
+                
             valid_loss += loss.item()
     print("valid", epoch, valid_loss / len(valid_loader))
     writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)

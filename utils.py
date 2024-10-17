@@ -7,26 +7,26 @@ def loss_function(outputs, targets, velocity_coeff=1.0, acceleration_coeff=1.0, 
     # Basic loss (e.g., Mean Squared Error)
     basic_loss = torch.nn.functional.mse_loss(outputs, targets)
     
-    # Calculate velocity (first derivative)
-    velocity_outputs = torch.diff(outputs, dim=0)
-    velocity_targets = torch.diff(targets, dim=0)
+    # # Calculate velocity (first derivative)
+    # velocity_outputs = torch.diff(outputs, dim=0)
+    # velocity_targets = torch.diff(targets, dim=0)
     
-    # Calculate acceleration (second derivative)
-    acceleration_outputs = torch.diff(velocity_outputs, dim=0)
-    acceleration_targets = torch.diff(velocity_targets, dim=0)
+    # # Calculate acceleration (second derivative)
+    # acceleration_outputs = torch.diff(velocity_outputs, dim=0)
+    # acceleration_targets = torch.diff(velocity_targets, dim=0)
     
-    # Calculate jerk (third derivative)
-    jerk_outputs = torch.diff(acceleration_outputs, dim=0)
-    jerk_targets = torch.diff(acceleration_targets, dim=0)
+    # # Calculate jerk (third derivative)
+    # jerk_outputs = torch.diff(acceleration_outputs, dim=0)
+    # jerk_targets = torch.diff(acceleration_targets, dim=0)
     
-    # Calculate velocity penalty
-    velocity_penalty = torch.nn.functional.mse_loss(velocity_outputs, velocity_targets)
+    # # Calculate velocity penalty
+    # velocity_penalty = torch.nn.functional.mse_loss(velocity_outputs, velocity_targets)
     
-    # Calculate acceleration penalty
-    acceleration_penalty = torch.nn.functional.mse_loss(acceleration_outputs, acceleration_targets)
+    # # Calculate acceleration penalty
+    # acceleration_penalty = torch.nn.functional.mse_loss(acceleration_outputs, acceleration_targets)
     
-    # Calculate jerk penalty
-    jerk_penalty = torch.nn.functional.mse_loss(jerk_outputs, jerk_targets)
+    # # Calculate jerk penalty
+    # jerk_penalty = torch.nn.functional.mse_loss(jerk_outputs, jerk_targets)
     
     # Calculate initial state penalty
     initial_state_penalty = torch.nn.functional.mse_loss(outputs[0], targets[0])
@@ -34,16 +34,17 @@ def loss_function(outputs, targets, velocity_coeff=1.0, acceleration_coeff=1.0, 
     # Calculate final state penalty
     final_state_penalty = torch.nn.functional.mse_loss(outputs[-1], targets[-1])
     
-    # Calculate L2 norm of the jerk
-    jerk_l2_norm = torch.norm(jerk_outputs, p=2)
+    # # Calculate L2 norm of the jerk
+    # jerk_l2_norm = torch.norm(jerk_outputs, p=2)
     
     # Combine basic loss with penalties
     total_loss = (basic_loss 
-                  + velocity_coeff * velocity_penalty 
-                  + acceleration_coeff * acceleration_penalty 
-                  + jerk_coeff * jerk_penalty
-                  + state_coeff * initial_state_penalty
-                  + state_coeff * final_state_penalty)
+                #   + velocity_coeff * velocity_penalty 
+                #   + acceleration_coeff * acceleration_penalty 
+                #   + jerk_coeff * jerk_penalty
+                #   + state_coeff * initial_state_penalty
+                #   + state_coeff * final_state_penalty
+                  )
     
     return total_loss
 

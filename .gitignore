@@ -5,3 +5,4 @@ __pycache__
 *.trc
 *.pkl
 single_task_sols_*.json
+eval_data
