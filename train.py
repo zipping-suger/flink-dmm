@@ -71,4 +71,5 @@ for epoch in range(0, n_epochs):
     print("valid", epoch, valid_loss / len(valid_loader))
     writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
 
-onnx_save.export(mlp, os.path.join(folder, "res.onnx"), dataset.input_size)
+# onnx_save.export(mlp, os.path.join(folder, "res.onnx"), dataset.input_size)
+onnx_save.export(mlp, os.path.join(folder, f"dmm_{datetime.datetime.now().strftime('%Y_%m_%d')}.onnx"), dataset.input_size)
