@@ -6,7 +6,7 @@ import os
 
 task_sols = {"task_sols": []}
 
-raw_task_sols_folder = "raw_task_sols_dmm"
+raw_task_sols_folder = "raw_task_sols_l_r_test"
 for filename in os.listdir(raw_task_sols_folder):
     if filename.startswith("single_task_sols_") and filename.endswith(".json"):
         with open(os.path.join(raw_task_sols_folder, filename)) as f:

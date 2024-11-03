@@ -2,6 +2,57 @@ import torch
 import torch.nn as nn
 import torch.utils.data
 
+import numpy as np
+import scipy
+import json
+import scipy.spatial
+import scipy.spatial.distance
+
+
+def load_data_from_json(filename):
+    with open(filename, 'r') as f:
+        task_sols = json.load(f)
+        
+    X = []
+    Y = []
+   
+
+    for task_sol in task_sols["task_sols"]:
+        X.append(task_sol["condensed_task"])
+        Y.append(task_sol["solution"])
+    
+    X = np.array(X)
+    Y = np.array(Y)
+    
+    print(X.shape)
+    print(Y.shape)
+    
+    return X, Y
+    
+
+
+def compute_diff(X_data, Y_data, r, move_r_mult=10**(1/18)):
+    x_diff = np.ndarray(X_data.shape[0])
+    y_diff = np.ndarray(X_data.shape[0])
+
+    tree = scipy.spatial.KDTree(X_data)
+    indices = tree.query_ball_point(X_data, r * move_r_mult, workers=-1)
+    for i, index in enumerate(indices):
+        x_diff[i] = np.linalg.norm(X_data[index].mean(0) - X_data[i])
+        y_diff[i] = np.linalg.norm(Y_data[index].mean(0) - Y_data[i])
+
+    return np.array(x_diff).flatten(), np.array(y_diff).flatten()
+
+def filter_data_dist(X_data, Y_data, r):
+    cum = 1
+    for i in range(30, 18, -1):
+        x_diff, y_diff = compute_diff(X_data, Y_data, r)
+        condition = y_diff < i
+        X_data, Y_data = X_data[condition], Y_data[condition]
+        cum *= condition.mean()
+        print(i, cum, condition.mean())
+    return X_data, Y_data
+
 # Loss function also penalizes the difference of velocity, acceleration, and initial/final state variation
 def loss_function(outputs, targets, velocity_coeff=1.0, acceleration_coeff=1.0, jerk_coeff=1.0, state_coeff=1):
     # Basic loss (e.g., Mean Squared Error)
@@ -54,6 +105,10 @@ class JointDataset(torch.utils.data.Dataset):
             self.X = torch.load(f).to(device)
         with open(y_filename, "rb") as f:
             self.Y = torch.load(f).to(device)
+            
+        # Convert to float32
+        self.X = self.X.float()
+        self.Y = self.Y.float()
 
         assert (self.X.shape[0] == self.Y.shape[0])
 

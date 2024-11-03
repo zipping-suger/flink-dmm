@@ -4,6 +4,8 @@ import torch.utils.data
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim.lr_scheduler as lr_scheduler
 
+torch.set_default_dtype(torch.float32)
+
 import os
 import onnx_save
 from utils import *
