@@ -4,7 +4,7 @@ import torch
 from utils import load_data_from_json, filter_data_dist
 
 
-raw_task_sols_folder = "raw_task_sols_l_r_test"
+raw_task_sols_folder = "raw_task_sols_l_r_1104"
 for filename in os.listdir(raw_task_sols_folder):
     
     if filename.startswith("single_task_sols_") and filename.endswith(".json"):
@@ -49,6 +49,10 @@ with open("X_filtered.trc", "wb") as f:
     torch.save(all_X, f)
 with open("Y_filtered.trc", "wb") as f:
     torch.save(all_Y, f)
+    
+# # clear tmp folder
+# for filename in os.listdir("tmp"):
+#     os.remove(os.path.join("tmp", filename))
     
 print(f"Final data shapes: {all_X.shape}, {all_Y.shape}")
 

@@ -24,9 +24,6 @@ def load_data_from_json(filename):
     X = np.array(X)
     Y = np.array(Y)
     
-    print(X.shape)
-    print(Y.shape)
-    
     return X, Y
     
 
