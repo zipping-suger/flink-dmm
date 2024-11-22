@@ -19,7 +19,7 @@ device = "cuda"
 dataset = JointDataset("X_filtered.trc", "Y_filtered.trc", device)
 mlp = MLP(dataset.input_size, dataset.output_size, dataset.X_normalise_params, dataset.Y_normalise_params).to(device)
 print(len(dataset))
-n_epochs = 100
+n_epochs =50
     
 
 optimizer = torch.optim.Adam(mlp.parameters(), lr=1e-3)
