@@ -73,7 +73,7 @@ def vae_loss_function(recon_x, x, mu, logvar, kl_weight=1.0):
     return recon_loss + kl_weight * kl_loss
 
 class JointDataset(torch.utils.data.Dataset):
-    def __init__(self, x_filename, y_filename, device):
+    def __init__(self, x_filename, y_filename, device, allow_sub_sample=False, sub_sample_size=None):
         with open(x_filename, "rb") as f:
             self.X = torch.load(f).to(device)
         with open(y_filename, "rb") as f:
@@ -84,6 +84,11 @@ class JointDataset(torch.utils.data.Dataset):
         self.Y = self.Y.float()
 
         assert (self.X.shape[0] == self.Y.shape[0])
+
+        if allow_sub_sample and sub_sample_size is not None:
+            indices = np.random.choice(self.X.shape[0], sub_sample_size, replace=False)
+            self.X = self.X[indices]
+            self.Y = self.Y[indices]
 
         self.X_normalise_params = [self.X.mean(dim=0), self.X.std(dim=0)]
         self.Y_normalise_params = [self.Y.mean(dim=0), self.Y.std(dim=0)]
