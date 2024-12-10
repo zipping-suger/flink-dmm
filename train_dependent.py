@@ -6,8 +6,10 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 import os
 import onnx_save
-from utils import *
 import datetime
+
+from utils import *
+from models.lstm import LSTM
   
 torch.manual_seed(42)
 folder = os.path.join("logs", datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))

@@ -6,10 +6,11 @@ from torch.utils.tensorboard import SummaryWriter
 import argparse
 import os
 import shutil
-import sys
+import datetime
+
+import onnx_save
 from utils import *
-from cgan_utils import *
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models.cgan import VanillaDiscriminator, UnetGenerator, compute_discriminator_loss, compute_generator_loss
     
     
 def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, scheduler_g, scheduler_d, num_epochs, writer):
@@ -21,7 +22,7 @@ def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, schedu
             position = inputs.to(device)
             
             # Step 1: Update discriminator
-            for _ in range(5):  # Can adjust number of discriminator updates per generator update
+            for _ in range(5):  # Crucial hyperparameter, need to balance between generator and discriminator
                 # Draw noise samples
                 z = torch.randn(position.size(0), generator.latent_size).to(device)
                 
@@ -67,15 +68,15 @@ def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, schedu
         print(f"Epoch [{epoch+1}/{num_epochs}], Discriminator Loss: {d_loss.item():.4f}, Generator Loss: {g_loss.item():.4f}")
         # # Save model checkpoints
         # if epoch % opt.save_interval == 0:
-        #     export_cgan(generator, os.path.join(folder, f"cgan_{epoch}.onnx"), input_size)
+        #     onnx_save.export_cgan(generator, os.path.join(folder, f"cgan_{epoch}.onnx"), input_size)
             
         #     # set all models to eval mode and to device
         #     generator.to(device)
         #     generator.train()
         
-        # export_cgan every 30 epochs
-        if epoch % 30 == 29:
-            export_cgan(generator, os.path.join(folder, f"cgan_{epoch}.onnx"), condition_size)
+        # onnx_save.export_cgan every 50 epochs
+        if epoch % 50 == 49:
+            onnx_save.export_cgan(generator, os.path.join(folder, f"cgan_{epoch}.onnx"), condition_size)
             generator.to(device)
             generator.train()
             discriminator.to(device)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     global folder
     
      # Create output folder
-    folder = os.path.join("logs", "cgan_model")
+    folder = os.path.join("logs", f"cgan_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
         
@@ -112,10 +113,6 @@ if __name__ == "__main__":
     
     # Initialize models
     generator = UnetGenerator(condition_size).to(device)
-    # discriminator =ConvDiscriminator(cond_dim=condition_size).to(device)
-    
-    # latent_size = 18
-    # generator = VanillaGenerator(condition_size, output_size, latent_size).to(device)
     discriminator = VanillaDiscriminator(condition_size, output_size).to(device)
     
     
@@ -131,7 +128,7 @@ if __name__ == "__main__":
     writer = SummaryWriter(folder)
     train(dataloader, generator, discriminator, optimizer_g, optimizer_d, scheduler_g, scheduler_d, num_epochs, writer)
     # Save the final model
-    export_cgan(generator, os.path.join(folder, f"cgan_final.onnx"), condition_size)
+    onnx_save.export_cgan(generator, os.path.join(folder, f"cgan.onnx"), condition_size)
     
     # Save models
     writer.close()

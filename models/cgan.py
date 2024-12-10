@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 import torch.nn.utils.spectral_norm as spectral_norm
 
 
-from helpers import (
+from models.helpers import (
     Downsample1d,
     Upsample1d,
     Conv1dBlock,
@@ -13,6 +13,28 @@ from helpers import (
     PreNorm,
     LinearAttention,
 )
+
+
+def compute_discriminator_loss(discriminator, real_samples, fake_samples, condition, device):
+    """Compute discriminator loss using log probabilities as per the formula"""
+    # Get discriminator outputs
+    d_real = discriminator(condition, real_samples)
+    d_fake = discriminator(condition, fake_samples)
+    
+    # Compute log probabilities
+    log_prob_real = torch.log(d_real + 1e-15)  # Add small epsilon to prevent log(0)
+    log_prob_fake = torch.log(1 - d_fake +1e-15)
+    
+    # Average over batch
+    loss = -(torch.mean(log_prob_real) + torch.mean(log_prob_fake))
+    
+    return loss, torch.mean(d_real), torch.mean(d_fake)
+
+def compute_generator_loss(discriminator, fake_samples, condition):
+    """Compute generator loss using log probabilities as per the formula"""
+    d_fake = discriminator(condition, fake_samples)
+    loss = -torch.mean(torch.log(d_fake + 1e-15))
+    return loss
 
 
 class CGANSampleWrapper(nn.Module):
@@ -25,33 +47,7 @@ class CGANSampleWrapper(nn.Module):
         noise = torch.randn(inputs.size(0), self.generator.latent_size).to("cpu")
         gen_trajs = self.generator(input_emb, noise)
         return gen_trajs
-    
-def export_cgan(generator: torch.nn.Module,  output_name: str, input_size: int):
-    
-    generator = generator.to("cpu")
-    generator.eval()
-    
-    # Create dummy inputs
-    dummy_input = torch.randn(1, input_size)
-    dynamic_axes = {'input': {0: 'batch_size'},
-                    'output': {0: 'batch_size'}}
 
-    # Initialize the wrapper model
-    wrapper_model = CGANSampleWrapper(generator)
-    wrapper_model.to("cpu")
-    wrapper_model.eval()
-
-    # Export the wrapper model
-    torch.onnx.export(
-        wrapper_model, 
-        dummy_input,  # Model input
-        output_name,  # Output file name
-        input_names=['input'],  # Input names
-        output_names=['output'],  # Output names
-        dynamic_axes=dynamic_axes  # Variable length axes
-    )
-    
-    
 class VanillaGenerator(nn.Module):
     def __init__(self, emb_size, output_size, latent_size):
         super(VanillaGenerator, self).__init__()
@@ -74,9 +70,6 @@ class VanillaGenerator(nn.Module):
         gen_input = torch.cat((input_emb, noise), -1)
         return self.model(gen_input)
 
-
-import torch
-import torch.nn as nn
 
 class VanillaDiscriminator(nn.Module):
     def __init__(self, emb_size, output_size):
@@ -108,30 +101,8 @@ class VanillaDiscriminator(nn.Module):
         emb_expanded = self.emb_expansion(input_emb)
         x = torch.cat((emb_expanded, traj), -1)
         return self.backbone(x)
-      
-                
-def compute_discriminator_loss(discriminator, real_samples, fake_samples, condition, device):
-    """Compute discriminator loss using log probabilities as per the formula"""
-    # Get discriminator outputs
-    d_real = discriminator(condition, real_samples)
-    d_fake = discriminator(condition, fake_samples)
     
-    # Compute log probabilities
-    log_prob_real = torch.log(d_real + 1e-15)  # Add small epsilon to prevent log(0)
-    log_prob_fake = torch.log(1 - d_fake +1e-15)
     
-    # Average over batch
-    loss = -(torch.mean(log_prob_real) + torch.mean(log_prob_fake))
-    
-    return loss, torch.mean(d_real), torch.mean(d_fake)
-
-def compute_generator_loss(discriminator, fake_samples, condition):
-    """Compute generator loss using log probabilities as per the formula"""
-    d_fake = discriminator(condition, fake_samples)
-    loss = -torch.mean(torch.log(d_fake + 1e-15))
-    return loss
-
-
 class ResidualTemporalBlock(nn.Module):
 
     def __init__(self, inp_channels, out_channels, embed_dim, horizon, kernel_size=5):

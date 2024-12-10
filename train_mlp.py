@@ -8,8 +8,10 @@ torch.set_default_dtype(torch.float32)
 
 import os
 import onnx_save
-from utils import *
 import datetime
+
+from utils import *
+from models.mlp import MLP, loss_function
   
 torch.manual_seed(42)  
 folder = os.path.join("logs", f"mlp_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}")

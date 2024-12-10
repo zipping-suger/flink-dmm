@@ -7,12 +7,14 @@ import torch.optim.lr_scheduler as lr_scheduler
 torch.set_default_dtype(torch.float32)
 
 import os
+import datetime
+
 import onnx_save
 from utils import *
-import datetime
+from models.cvae import CVAE, vae_loss_function
   
 torch.manual_seed(42)
-folder = os.path.join("logs", datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+folder = os.path.join("logs", f"cvae_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}")
 
 device = "cuda"
 
@@ -95,7 +97,7 @@ for epoch in range(0, n_epochs):
     
     # Onnx save the model every 10 epochs
     if epoch % 10 == 9:
-        onnx_save.export_cvae(cvae, os.path.join(folder, f"cvae_epoch_{epoch+1}_{datetime.datetime.now().strftime('%Y_%m_%d')}.onnx"), dataset.input_size)
+        onnx_save.export_cvae(cvae, os.path.join(folder, f"cvae_epoch_{epoch+1}.onnx"), dataset.input_size)
         # Model to cuda
         cvae.to(device)
         cvae.train()
@@ -103,5 +105,5 @@ for epoch in range(0, n_epochs):
 
 
 # Save the final model
-onnx_save.export_cvae(cvae, os.path.join(folder, f"cvae_{datetime.datetime.now().strftime('%Y_%m_%d')}.onnx"), dataset.input_size)    
-torch.save(cvae.state_dict(), os.path.join(folder, f"cvae_{datetime.datetime.now().strftime('%Y_%m_%d')}.pt"))
+onnx_save.export_cvae(cvae, os.path.join(folder, f"cvae.onnx"), dataset.input_size)    
+torch.save(cvae.state_dict(), os.path.join(folder, f"cvae.pt"))

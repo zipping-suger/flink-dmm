@@ -1,5 +1,6 @@
 import torch
-from utils import CVAE, CVAESampleWrapper
+from models.cvae import CVAESampleWrapper
+from models.cgan import CGANSampleWrapper
 
 def export(model: torch.nn.Module,
            output_name: str,
@@ -29,6 +30,31 @@ def export_cvae(cvae_model: torch.nn.Module, output_name: str, condition_size: i
     torch.onnx.export(
         wrapper_model, 
         dummy_condition,  # Model input
+        output_name,  # Output file name
+        input_names=['input'],  # Input names
+        output_names=['output'],  # Output names
+        dynamic_axes=dynamic_axes  # Variable length axes
+    )
+    
+def export_cgan(generator: torch.nn.Module,  output_name: str, input_size: int):
+    
+    generator = generator.to("cpu")
+    generator.eval()
+    
+    # Create dummy inputs
+    dummy_input = torch.randn(1, input_size)
+    dynamic_axes = {'input': {0: 'batch_size'},
+                    'output': {0: 'batch_size'}}
+
+    # Initialize the wrapper model
+    wrapper_model = CGANSampleWrapper(generator)
+    wrapper_model.to("cpu")
+    wrapper_model.eval()
+
+    # Export the wrapper model
+    torch.onnx.export(
+        wrapper_model, 
+        dummy_input,  # Model input
         output_name,  # Output file name
         input_names=['input'],  # Input names
         output_names=['output'],  # Output names
