@@ -35,11 +35,7 @@ For the Swiss Post Singulation Task, the inputs are: box pick pose, box drop pos
 ### Step 2: Generate Solutions
 
 1. Move the `dmm_specification.json` file to `/flink/cerebo/tui/motion-generation`.
-2. Set the hyperparameter exploration step size: 
-
-start
-
-.
+2. Set the hyperparameter exploration step size: `start`.
 3. Set `mode` to `"train"` for collecting training data and `"test"` for testing data.
 4. Run `motion-generation-2` to generate trajectories saved as `single_task_sols_{step_size}.json` under `./data`.
 
