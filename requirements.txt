@@ -1,0 +1,10 @@
+torch
+numpy
+matplotlib
+seaborn
+scipy
+pandas
+plotly
+ipywidgets
+einops
+tensorboard
