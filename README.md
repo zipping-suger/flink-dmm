@@ -26,9 +26,11 @@ For the Swiss Post Singulation Task, the inputs are: box pick pose, box drop pos
 <p align="center">
   <img src="asset/domain_specification.png" alt="Domain Specification" width="45%">
   <img src="asset/seed_specification.png" alt="Seed Specification" width="45%">
+  <br>
+  The boxes show the range of positions, and the center boxes show the orientation range. Red indicates the picking pose, and green indicates the dropping pose.
 </p>
 
-*The boxes show the range of positions, and the center boxes show the orientation range. Red indicates the picking pose, and green indicates the dropping pose.*
+
 
 ### Step 2: Generate Solutions
 
@@ -93,3 +95,31 @@ Run `motion-test-app`. Choose to use DMM as warm start method under the `Motion`
 </p>
 
 Similar steps apply for other applications such as `singulation-app`.
+
+
+## Finial Thoughts
+
+
+### Multi-modality data
+
+The major difficulty in training DMM lies in the multi-modality of the data, or in other terms, the conflicting data points, where inputs are similar but outputs vary significantly. Direct supervised learning with loss functions such as MSE tends to average the outputs, resulting in poor performance.
+
+
+<p align="center">
+  <img src="asset/Two-Link_IK.png" alt="Two-Link IK" style="background-color:white;">
+  <br>
+  Two-Link_IK: the background shows the error. MSE fails. EBMs generally works but with high error. GAN has the best performance.
+</p>
+
+<p align="center">
+  <img src="asset/Hyperbola.png" alt="Two-valued hyperbola" style="background-color:white;">
+  <br>
+  Two-valued hyperbola: The MSE-based MLP averages modes (red), EBMs capture both but generate suboptimal samples, GANs captures one mode out of the mixed data.
+</p>
+
+For robot manipulation, this problem is bound to happen since there exist multiple solutions for a given task.
+
+
+### Solutions
+
+

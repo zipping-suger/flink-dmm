@@ -11,8 +11,8 @@ import onnx_save
 from utils import *
 import datetime
   
-torch.manual_seed(42)
-folder = os.path.join("logs", datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+torch.manual_seed(42)  
+folder = os.path.join("logs", f"mlp_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}")
 
 device = "cuda"
 
@@ -74,4 +74,4 @@ for epoch in range(0, n_epochs):
     writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
 
 # onnx_save.export(mlp, os.path.join(folder, "res.onnx"), dataset.input_size)
-onnx_save.export(mlp, os.path.join(folder, f"dmm_{datetime.datetime.now().strftime('%Y_%m_%d')}.onnx"), dataset.input_size)
+onnx_save.export(mlp, os.path.join(folder, "mlp.onnx"), dataset.input_size)
