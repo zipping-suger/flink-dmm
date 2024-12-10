@@ -81,18 +81,19 @@ class VanillaDiscriminator(nn.Module):
         self.emb_expansion = nn.Sequential(
         nn.Linear(emb_size, self.emb_expansion_size),  # Expand emb_size
         nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(self.emb_expansion_size, self.emb_expansion_size),  # Expand emb_size
 )
 
         self.backbone = nn.Sequential(
-            nn.Linear(output_size + self.emb_expansion_size, 1024),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout(0.5),
-            nn.Linear(1024, 512),
+            nn.Linear(output_size + self.emb_expansion_size, 512),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             nn.Linear(512, 256),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
+            # nn.Linear(512, 256),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # nn.Dropout(0.5),
             nn.Linear(256, 1),
             nn.Sigmoid()
         )
@@ -153,7 +154,7 @@ class TemporalUnet(nn.Module):
 
         self.cond_mlp = nn.Sequential(
             nn.Linear(cond_dim, dim * 4),
-            nn.Mish(),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(dim * 4, dim),
         )
 
