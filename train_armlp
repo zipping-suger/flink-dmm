@@ -1,0 +1,96 @@
+import torch
+import torch.nn as nn
+import torch.utils.data
+from torch.utils.tensorboard import SummaryWriter
+import torch.optim.lr_scheduler as lr_scheduler
+
+torch.set_default_dtype(torch.float32)
+
+import os
+import datetime
+
+import onnx_save
+from utils import ARJointDataset
+from models.armlp import ARMLP, ARMLPWrapper
+
+torch.manual_seed(42)
+folder = os.path.join("logs", f"armlp_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}")
+
+device = "cuda"
+
+# Load dataset
+dataset = ARJointDataset("X_filtered.trc", "Y_filtered.trc", device,  allow_sub_sample=True, sub_sample_size=10)
+print(len(dataset))
+
+# Initialize model
+time_embed_size = 16
+model = ARMLP(dataset.input_size, dataset.output_size, time_embed_size).to(device)
+
+n_epochs = 1
+batch_size = 32
+
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.85)
+
+train_set, val_set = torch.utils.data.random_split(dataset, [int(0.8 * len(dataset)), len(dataset) - int(0.8 * len(dataset))])
+train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
+valid_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=True)
+
+writer = SummaryWriter(folder)
+
+loss_function = nn.MSELoss()
+
+for epoch in range(n_epochs):
+    print(f'Starting epoch {epoch+1}')
+    train_loss = 0.0
+    model.train()
+    for i, data in enumerate(train_loader):
+        inputs, targets, time_step = data
+        inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(inputs, time_step)
+        loss = loss_function(outputs, targets)
+
+        # check for NaNs
+        if torch.isnan(loss):
+            print(f"NaN detected in training loss at epoch {epoch}, batch {i}")
+
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+    print("train", epoch, train_loss / len(train_loader))
+    writer.add_scalar("Loss/train", train_loss / len(train_loader), epoch)
+    writer.add_scalar("Training/LR", scheduler.get_last_lr()[0], epoch)
+
+    if epoch % 10 == 9:
+        scheduler.step()
+
+    valid_loss = 0.0
+    model.eval()
+    with torch.no_grad():
+        for i, data in enumerate(valid_loader):
+            inputs, targets, time_step = data
+            inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
+
+            outputs = model(inputs, time_step)
+            loss = loss_function(outputs, targets)
+
+            if torch.isnan(loss):
+                print(f"NaN detected in validation loss at epoch {epoch}, batch {i}")
+
+            valid_loss += loss.item()
+    print("valid", epoch, valid_loss / len(valid_loader))
+    writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
+    
+print('Finished Training')
+
+# Test the forward pass of the model
+model_wrapper = ARMLPWrapper(model)
+# randomly sample a input from the dataset
+x, y, t = dataset[0]
+x = x.unsqueeze(0).to(device)
+traj = model_wrapper.forward(x).to(device)
+
+# Svae the onnx 
+onnx_save.export_armlp(model, os.path.join(folder, "armlp.onnx"), dataset.input_size)

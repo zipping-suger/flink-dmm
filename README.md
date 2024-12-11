@@ -79,7 +79,7 @@ The training process and the model are saved under `./logs/{model}_{time:%Y_%m_%
 
 ## Test and Deployment
 
-The model should be placed under `APP_FOLDER "/flink-networks/dmm/"`.
+The model should be placed under `APP_FOLDER "/flink-networks/dmm/"`. Also upload the model to AWS `s3/flink-networks/dmm` and added the model name to `downloadList.json`
 
 For testing, move the ONNX model to `/flink/cerebo/gui/motion-planning/motion-test-app` and modify the corresponding `filenames_dmm`.
 

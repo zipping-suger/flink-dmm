@@ -10,7 +10,7 @@ import datetime
 
 import onnx_save
 from utils import *
-from models.cgan import VanillaDiscriminator, UnetGenerator, compute_discriminator_loss, compute_generator_loss
+from models.cgan import *
     
     
 def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, scheduler_g, scheduler_d, num_epochs, writer):
@@ -18,31 +18,53 @@ def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, schedu
     for epoch in range(num_epochs):
         for batch_idx, (inputs, targets) in enumerate(dataloader):
             # Move data to device
-            angles = targets.to(device)
-            position = inputs.to(device)
+            targets = targets.to(device)
+            inputs = inputs.to(device)
             
             # Step 1: Update discriminator
             for _ in range(5):  # Crucial hyperparameter, need to balance between generator and discriminator
                 # Draw noise samples
-                z = torch.randn(position.size(0), generator.latent_size).to(device)
+                z = torch.randn(inputs.size(0), generator.latent_size).to(device)
                 
                 # Generate fake samples
-                fake_angles = generator(position, z)
+                fake_targets = generator(inputs, z)
                 
                 # Update discriminator
+                # -------orginal GAN loss----------------
                 d_loss, real_score, fake_score = compute_discriminator_loss(
-                    discriminator, angles, fake_angles.detach(), position, device
+                    discriminator, targets, fake_targets.detach(), inputs
                 )
+                
+                # # -------WGAN loss----------------
+                # d_loss, real_score, fake_score = compute_discriminator_loss_wgan(
+                #     discriminator, targets, fake_targets.detach(), inputs
+                # )
+                
+                #  # WGAN-GP: Compute gradient penalty
+                # gradient_penalty = compute_gradient_penalty(discriminator, targets, fake_targets.detach(), inputs)
+                # d_loss +=  lambda_gp * gradient_penalty
+                
                 
                 optimizer_d.zero_grad()
                 d_loss.backward()
                 torch.nn.utils.clip_grad_norm_(discriminator.parameters(), max_norm=1)
                 optimizer_d.step()
+                
+                # # IMPPORTANT Clip weights of WGAN discriminator
+                # for p in discriminator.parameters():
+                #     p.data.clamp_(-0.01, 0.01)
+                
+               
+                
 
             # Step 2 & 3: Update generator
-            z = torch.randn(position.size(0), generator.latent_size).to(device)
-            fake_angles = generator(position, z)
-            g_loss = compute_generator_loss(discriminator, fake_angles, position)
+            z = torch.randn(inputs.size(0), generator.latent_size).to(device)
+            fake_targets = generator(inputs, z)
+            
+            # -------orginal GAN loss----------------
+            g_loss = compute_generator_loss(discriminator, fake_targets, inputs)
+            # -------WGAN loss----------------
+            # g_loss = compute_generator_loss_wgan(discriminator, fake_targets, inputs)
             
             optimizer_g.zero_grad()
             g_loss.backward()
@@ -100,7 +122,7 @@ if __name__ == "__main__":
     num_epochs = 200
     batch_size = 128
     learning_rate_g = 1e-4
-    learning_rate_d = 2e-4  # Reduced learning rate for discriminator
+    learning_rate_d = 5e-5  # Reduced learning rate for discriminator
 
     # Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

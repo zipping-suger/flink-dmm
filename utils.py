@@ -55,6 +55,18 @@ def get_kl_weight(epoch, start, end, max_weight):
         return max_weight
     else:
         return max_weight * (epoch - start) / (end - start)
+    
+def traj_smoothness_loss(traj, labda_smooth = 0.001, joint_size=6):
+    """
+    traj: [batch, joint_size*time_horizon]
+    """
+    # TODO: need verification
+    traj = traj.view(-1, joint_size, -1)
+    traj = traj.permute(0, 2, 1)
+    traj_diff = traj[:, 1:] - traj[:, :-1]
+    traj_diff = traj_diff.pow(2).sum(-1).mean()
+    return labda_smooth * traj_diff
+    
 
 
 class JointDataset(torch.utils.data.Dataset):
@@ -87,6 +99,57 @@ class JointDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.Y[idx]
+    
+    
+class ARJointDataset(torch.utils.data.Dataset):
+    def __init__(self, x_filename, y_filename, device, allow_sub_sample=False, sub_sample_size=None):
+        with open(x_filename, "rb") as f:
+            self.X = torch.load(f).to(device)
+        with open(y_filename, "rb") as f:
+            Y = torch.load(f).to(device)
+            self.Y = Y.reshape(-1, 120, 6) #[sample, time_horrizon, joint]
+            
+        # Convert to float32
+        self.X = self.X.float()
+        self.Y = self.Y.float()
+
+        if allow_sub_sample and sub_sample_size is not None:
+            indices = np.random.choice(self.X.shape[0], sub_sample_size, replace=False)
+            self.X = self.X[indices]
+            self.Y = self.Y[indices]
+
+        # Check if X and Y have the same number of samples
+        assert (self.X.shape[0] == self.Y.shape[0])
+        
+        self.input_size = self.X.shape[1]
+        self.output_size = 6
+
+        # Process the data to create individual states
+        self.processed_data = []
+        self._process_data()
+
+    def _process_data(self):
+        for i in range(self.Y.shape[0]):
+            trajectory = self.Y[i]  # Trajectory of states for a single sample
+            condition = self.X[i, :-6]  # Condition part of X (excluding last 6 dimensions)
+
+            for t in range(trajectory.shape[0] - 1):
+                current_state = trajectory[t]
+                next_state = trajectory[t + 1]
+
+                processed_x = torch.cat((condition, current_state), dim=0)
+                processed_y = next_state - current_state # Predict the change in state
+                t = torch.tensor([t], dtype=torch.float32).to(self.X.device)
+
+                self.processed_data.append((processed_x, processed_y, t))
+
+        self.rows = len(self.processed_data)
+
+    def __len__(self):
+        return self.rows
+
+    def __getitem__(self, idx):
+        return self.processed_data[idx]
 
 
 class LSTMJointDataset(torch.utils.data.Dataset):

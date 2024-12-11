@@ -1,6 +1,7 @@
 import torch
 from models.cvae import CVAESampleWrapper
 from models.cgan import CGANSampleWrapper
+from models.armlp import ARMLPWrapper
 
 def export(model: torch.nn.Module,
            output_name: str,
@@ -60,6 +61,31 @@ def export_cgan(generator: torch.nn.Module,  output_name: str, input_size: int):
         output_names=['output'],  # Output names
         dynamic_axes=dynamic_axes  # Variable length axes
     )
+    
+def export_armlp(model: torch.nn.Module, output_name: str, input_size: int):
+    model = model.to("cpu")
+    model.eval()
+    
+    # Create dummy inputs
+    dummy_input = torch.randn(1, input_size)
+    dynamic_axes = {'input': {0: 'batch_size'},
+                    'output': {0: 'batch_size'}}
+    
+    # Initialize the wrapper model
+    wrapper_model = ARMLPWrapper(model, horizon_length=120)
+    wrapper_model.eval()
+    wrapper_model.to("cpu")
+    
+    # Export the wrapper model
+    torch.onnx.export(
+        wrapper_model, 
+        dummy_input,  # Model input
+        output_name,  # Output file name
+        input_names=['input'],  # Input names
+        output_names=['output'],  # Output names
+        dynamic_axes=dynamic_axes  # Variable length axes
+    )
+    
     
 
 def export_lstm(model: torch.nn.Module,
