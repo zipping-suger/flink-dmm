@@ -60,10 +60,16 @@ This will filter the data based on the Euler distance of the trajectories, remov
 
 Run the following commands to train different models for the Deep Manipulation Memory (DMM):
 
-- **MSE-MLP based DMM**: Works great with single mode data.
+- **MSE-MLP based DMM**: Works great with single mode data. 
     ```sh
     python train_mlp.py
     ```
+
+- **Autoregressive MLP DMM**: Works great with multi modularity data.
+    ```sh
+    python train_armlp.py
+    ```
+
 
 - **Temporal UNet based DMM**: Suitable for multi-modality data. But the quality of trajectory is currently not good.
     ```sh
@@ -150,7 +156,7 @@ I have tested the following models:
     - Works great with the Two Link Inverse Kinematics (IK) problem. Theoretically, it should also work with trajectories. However, designing a generator that can model the distribution is challenging. Additionally, balancing the generator and discriminator requires significant effort.
 
 3. **Autoregressive Model:**
-    - Works great with trajectories but is not time-efficient.
+    - Works great with trajectories. I believe autoregressive model can capture more complex distributions due to its "instability". Or from another perspective, it reduces the portion of conflicting data points. 
 
 4. **Diffusion Model:**
     - Similar to image generation, this model has the most capacity and is stable to train. The downside is that it is not time-efficient. There is ongoing research using diffusion models to generate trajectories. See [Planning with Diffusion for Flexible Behavior Synthesis](https://arxiv.org/abs/2205.09991).
