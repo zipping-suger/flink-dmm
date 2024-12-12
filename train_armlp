@@ -19,14 +19,15 @@ folder = os.path.join("logs", f"armlp_{datetime.datetime.now().strftime('%Y_%m_%
 device = "cuda"
 
 # Load dataset
-dataset = ARJointDataset("X_filtered.trc", "Y_filtered.trc", device,  allow_sub_sample=True, sub_sample_size=10)
-print(len(dataset))
-
+dataset = ARJointDataset("X_filtered.trc", "Y_filtered.trc", device,  allow_sub_sample=True, sub_sample_size=20000)
+# dataset = ARJointDataset("X_filtered.trc", "Y_filtered.trc", device) # use this for full dataset
+print("data size:", len(dataset))
+      
 # Initialize model
 time_embed_size = 16
 model = ARMLP(dataset.input_size, dataset.output_size, time_embed_size).to(device)
 
-n_epochs = 1
+n_epochs = 100
 batch_size = 32
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -65,6 +66,11 @@ for epoch in range(n_epochs):
 
     if epoch % 10 == 9:
         scheduler.step()
+        
+        # save the onnx model
+        onnx_save.export_armlp(model, os.path.join(folder, f"armlp_{epoch}.onnx"), dataset.input_size)
+        model.to(device)
+        model.train()
 
     valid_loss = 0.0
     model.eval()
@@ -85,12 +91,15 @@ for epoch in range(n_epochs):
     
 print('Finished Training')
 
-# Test the forward pass of the model
-model_wrapper = ARMLPWrapper(model)
-# randomly sample a input from the dataset
-x, y, t = dataset[0]
-x = x.unsqueeze(0).to(device)
-traj = model_wrapper.forward(x).to(device)
+# # Test the forward pass of the model
+# model_wrapper = ARMLPWrapper(model)
+# # randomly sample a input from the dataset
+# x, y, t = dataset[0]
+# x = x.unsqueeze(0).to(device)
+# traj = model_wrapper.forward(x).to(device)
+
+# Save the model
+torch.save(model.state_dict(), os.path.join(folder, "armlp.pth"))
 
 # Svae the onnx 
 onnx_save.export_armlp(model, os.path.join(folder, "armlp.onnx"), dataset.input_size)

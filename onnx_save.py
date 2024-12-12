@@ -14,9 +14,6 @@ def export(model: torch.nn.Module,
     torch.onnx.export(model, dummy_input, output_name, input_names=['input'], output_names=['output'], dynamic_axes=dynamic_axes)
 
 def export_cvae(cvae_model: torch.nn.Module, output_name: str, condition_size: int):
-    cvae_model = cvae_model.to("cpu")
-    cvae_model.eval()
-    
     # Initialize the wrapper model
     wrapper_model = CVAESampleWrapper(cvae_model)
     wrapper_model.eval()
@@ -38,10 +35,6 @@ def export_cvae(cvae_model: torch.nn.Module, output_name: str, condition_size: i
     )
     
 def export_cgan(generator: torch.nn.Module,  output_name: str, input_size: int):
-    
-    generator = generator.to("cpu")
-    generator.eval()
-    
     # Create dummy inputs
     dummy_input = torch.randn(1, input_size)
     dynamic_axes = {'input': {0: 'batch_size'},
@@ -62,10 +55,7 @@ def export_cgan(generator: torch.nn.Module,  output_name: str, input_size: int):
         dynamic_axes=dynamic_axes  # Variable length axes
     )
     
-def export_armlp(model: torch.nn.Module, output_name: str, input_size: int):
-    model = model.to("cpu")
-    model.eval()
-    
+def export_armlp(model: torch.nn.Module, output_name: str, input_size: int):    
     # Create dummy inputs
     dummy_input = torch.randn(1, input_size)
     dynamic_axes = {'input': {0: 'batch_size'},
