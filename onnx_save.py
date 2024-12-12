@@ -62,7 +62,7 @@ def export_armlp(model: torch.nn.Module, output_name: str, input_size: int):
                     'output': {0: 'batch_size'}}
     
     # Initialize the wrapper model
-    wrapper_model = ARMLPWrapper(model, horizon_length=120)
+    wrapper_model = ARMLPWrapper(model, horizon_length=200)
     wrapper_model.eval()
     wrapper_model.to("cpu")
     

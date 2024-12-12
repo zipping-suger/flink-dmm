@@ -41,55 +41,55 @@ writer = SummaryWriter(folder)
 
 loss_function = nn.MSELoss()
 
-for epoch in range(n_epochs):
-    print(f'Starting epoch {epoch+1}')
-    train_loss = 0.0
-    model.train()
-    for i, data in enumerate(train_loader):
-        inputs, targets, time_step = data
-        inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
+# for epoch in range(n_epochs):
+#     print(f'Starting epoch {epoch+1}')
+#     train_loss = 0.0
+#     model.train()
+#     for i, data in enumerate(train_loader):
+#         inputs, targets, time_step = data
+#         inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
 
-        optimizer.zero_grad()
-        outputs = model(inputs, time_step)
-        loss = loss_function(outputs, targets)
+#         optimizer.zero_grad()
+#         outputs = model(inputs, time_step)
+#         loss = loss_function(outputs, targets)
 
-        # check for NaNs
-        if torch.isnan(loss):
-            print(f"NaN detected in training loss at epoch {epoch}, batch {i}")
+#         # check for NaNs
+#         if torch.isnan(loss):
+#             print(f"NaN detected in training loss at epoch {epoch}, batch {i}")
 
-        loss.backward()
-        optimizer.step()
-        train_loss += loss.item()
-    print("train", epoch, train_loss / len(train_loader))
-    writer.add_scalar("Loss/train", train_loss / len(train_loader), epoch)
-    writer.add_scalar("Training/LR", scheduler.get_last_lr()[0], epoch)
+#         loss.backward()
+#         optimizer.step()
+#         train_loss += loss.item()
+#     print("train", epoch, train_loss / len(train_loader))
+#     writer.add_scalar("Loss/train", train_loss / len(train_loader), epoch)
+#     writer.add_scalar("Training/LR", scheduler.get_last_lr()[0], epoch)
 
-    if epoch % 10 == 9:
-        scheduler.step()
+#     if epoch % 10 == 9:
+#         scheduler.step()
         
-        # save the onnx model
-        onnx_save.export_armlp(model, os.path.join(folder, f"armlp_{epoch}.onnx"), dataset.input_size)
-        model.to(device)
-        model.train()
+#         # save the onnx model
+#         onnx_save.export_armlp(model, os.path.join(folder, f"armlp_{epoch}.onnx"), dataset.input_size)
+#         model.to(device)
+#         model.train()
 
-    valid_loss = 0.0
-    model.eval()
-    with torch.no_grad():
-        for i, data in enumerate(valid_loader):
-            inputs, targets, time_step = data
-            inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
+#     valid_loss = 0.0
+#     model.eval()
+#     with torch.no_grad():
+#         for i, data in enumerate(valid_loader):
+#             inputs, targets, time_step = data
+#             inputs, targets, time_step = inputs.to(device), targets.to(device), time_step.to(device)
 
-            outputs = model(inputs, time_step)
-            loss = loss_function(outputs, targets)
+#             outputs = model(inputs, time_step)
+#             loss = loss_function(outputs, targets)
 
-            if torch.isnan(loss):
-                print(f"NaN detected in validation loss at epoch {epoch}, batch {i}")
+#             if torch.isnan(loss):
+#                 print(f"NaN detected in validation loss at epoch {epoch}, batch {i}")
 
-            valid_loss += loss.item()
-    print("valid", epoch, valid_loss / len(valid_loader))
-    writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
+#             valid_loss += loss.item()
+#     print("valid", epoch, valid_loss / len(valid_loader))
+#     writer.add_scalar("Loss/valid", valid_loss / len(valid_loader), epoch)
     
-print('Finished Training')
+# print('Finished Training')
 
 # # Test the forward pass of the model
 # model_wrapper = ARMLPWrapper(model)
@@ -98,8 +98,11 @@ print('Finished Training')
 # x = x.unsqueeze(0).to(device)
 # traj = model_wrapper.forward(x).to(device)
 
-# Save the model
-torch.save(model.state_dict(), os.path.join(folder, "armlp.pth"))
+# # Save the model
+# torch.save(model.state_dict(), os.path.join(folder, "armlp.pth"))
+
+# Load the model
+model.load_state_dict(torch.load(os.path.join("logs", "armlp_20k", "armlp.pth")))
 
 # Svae the onnx 
 onnx_save.export_armlp(model, os.path.join(folder, "armlp.onnx"), dataset.input_size)

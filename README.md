@@ -65,7 +65,7 @@ Run the following commands to train different models for the Deep Manipulation M
     python train_mlp.py
     ```
 
-- **Temporal UNet based DMM**: Suitable for multi-modality data.
+- **Temporal UNet based DMM**: Suitable for multi-modality data. But the quality of trajectory is currently not good.
     ```sh
     python train_cgan.py
     ```
