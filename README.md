@@ -83,6 +83,17 @@ Run the following commands to train different models for the Deep Manipulation M
 
 The training process and the model are saved under `./logs/{model}_{time:%Y_%m_%d_%H_%M_%S}`.
 
+## Evaluation of DMM
+1. Place the generated ONNX model in the `/flink/cerebo/app/gui/dmm-evaluation-app/flink-networks/dmm/` directory and update the corresponding `filenames_dmm`.
+2. Move the `single_task_sols_{}.json` file for testing to the `APP_FOLDER/data/` directory.
+3. Run the `dmm-evaluation-app`. In the `Motion` module, select the method used for warm start, then click `create problem` and `optimize`.
+4. Click `Loop Over All Solutions` to evaluate the trajectories based on iteration number and evaluation value. The results will be saved in the `data` directory.
+
+<p align="center">
+  <img src="asset/dmm_eval.gif" alt="alt text" style="width:80%;">
+</p>
+
+
 ## Test and Deployment
 
 The model should be placed under `APP_FOLDER "/flink-networks/dmm/"`. Also upload the model to AWS `s3/flink-networks/dmm` and added the model name to `downloadList.json`
